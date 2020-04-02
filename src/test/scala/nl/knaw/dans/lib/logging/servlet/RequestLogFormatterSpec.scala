@@ -18,12 +18,13 @@ package nl.knaw.dans.lib.logging.servlet
 import javax.servlet.http.HttpServletRequest
 import nl.knaw.dans.lib.logging.servlet.masked.MaskedRequestLogFormatter
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatra.MultiParams
 
 import scala.collection.JavaConverters._
 
-class RequestLogFormatterSpec extends FlatSpec with Matchers with MockFactory with TestServletFixture {
+class RequestLogFormatterSpec extends AnyFlatSpec with Matchers with MockFactory with TestServletFixture {
 
   override protected val mockParams: MultiParams = Map(
     "foo" -> Seq("bar"),

@@ -18,12 +18,13 @@ package nl.knaw.dans.lib.logging.servlet
 import javax.servlet.http.{ HttpServletRequest, HttpServletResponse }
 import nl.knaw.dans.lib.logging.servlet.masked.MaskedResponseLogFormatter
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatra._
 
 import scala.collection.JavaConverters._
 
-class ResponseLogFormatterSpec extends FlatSpec with Matchers with MockFactory with TestServletFixture {
+class ResponseLogFormatterSpec extends AnyFlatSpec with Matchers with MockFactory with TestServletFixture {
 
   private val mockHeaders: HeaderMap = Map(
     "Set-Cookie" -> Seq("scentry.auth.default.user=abc456.pq.xy"),

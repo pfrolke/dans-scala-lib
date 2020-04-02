@@ -17,9 +17,11 @@ package nl.knaw.dans.lib.string
 
 import java.util.UUID
 
-import org.scalatest.{ EitherValues, FlatSpec, Matchers, OptionValues }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{ EitherValues, OptionValues }
 
-class StringExtensionsSpec extends FlatSpec with Matchers with OptionValues with EitherValues {
+class StringExtensionsSpec extends AnyFlatSpec with Matchers with OptionValues with EitherValues {
 
   "isBlank" should "return true when given an empty String" in {
     "".isBlank shouldBe true

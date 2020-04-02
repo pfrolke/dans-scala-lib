@@ -17,9 +17,10 @@ package nl.knaw.dans.lib.error
 
 import java.io.{ PrintWriter, StringWriter }
 
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CompositeExceptionSpec extends FlatSpec with Matchers {
+class CompositeExceptionSpec extends AnyFlatSpec with Matchers {
 
   "getMessage" should "return the number of exceptions in the CompositeException" in {
     val ex1 = new Exception("msg1")

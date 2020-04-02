@@ -15,9 +15,10 @@
  */
 package nl.knaw.dans.lib.logging.servlet.masked
 
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class MaskerSpec extends FlatSpec with Matchers {
+class MaskerSpec extends AnyFlatSpec with Matchers {
 
   private val cookieKey = "scentry.auth.default.user"
   private val cookieValue = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1NDcyMDc2MjksImlhdCI6MTU0NzIwNDAyOSwidWlkIjoidXNlcjAwMSJ9.UH3bMyWaUimn0ctbEcThh4hx5LlvYJ61kfvzU4O5JPI"

@@ -15,12 +15,14 @@
  */
 package nl.knaw.dans.lib.error
 
-import org.scalatest.{ FlatSpec, Inside, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.Inside
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.immutable.Range.Inclusive
 import scala.util.{ Failure, Success, Try }
 
-class CollectResultsSpec extends FlatSpec with Matchers with Inside {
+class CollectResultsSpec extends AnyFlatSpec with Matchers with Inside {
 
   "collectResults" should "return a Success with a list of results when all elements of the input list are a Success" in {
     val initialCollection: Inclusive = 1 to 10

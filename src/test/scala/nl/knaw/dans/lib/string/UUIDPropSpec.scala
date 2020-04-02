@@ -16,10 +16,12 @@
 package nl.knaw.dans.lib.string
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{ EitherValues, Matchers, PropSpec }
+import org.scalatest.EitherValues
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class UUIDPropSpec extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with EitherValues {
+class UUIDPropSpec extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with EitherValues {
 
   property("a valid UUID, converted to a String should be parsed back to the same UUID") {
     forAll(Gen.uuid)(uuid => {

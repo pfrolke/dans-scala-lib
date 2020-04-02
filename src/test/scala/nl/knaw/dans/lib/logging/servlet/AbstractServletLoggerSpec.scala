@@ -16,12 +16,13 @@
 package nl.knaw.dans.lib.logging.servlet
 
 import nl.knaw.dans.lib.logging.servlet.masked.MaskedRemoteAddress
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatra.test.EmbeddedJettyContainer
 import org.scalatra.test.scalatest.ScalatraSuite
 import org.scalatra.{ Ok, ScalatraBase, ScalatraServlet }
 
-class AbstractServletLoggerSpec extends FlatSpec with Matchers with EmbeddedJettyContainer with ScalatraSuite {
+class AbstractServletLoggerSpec extends AnyFlatSpec with Matchers with EmbeddedJettyContainer with ScalatraSuite {
 
   private trait TestLoggers extends AbstractServletLogger
     with ResponseLogFormatter

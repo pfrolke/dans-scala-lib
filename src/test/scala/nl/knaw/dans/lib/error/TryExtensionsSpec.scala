@@ -17,11 +17,13 @@ package nl.knaw.dans.lib.error
 
 import java.util.concurrent.atomic.{ AtomicBoolean, AtomicInteger }
 
-import org.scalatest.{ FlatSpec, Inside, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{ FlatSpec, Inside }
 
 import scala.util.{ Failure, Success, Try }
 
-class TryExtensionsSpec extends FlatSpec with Matchers with Inside {
+class TryExtensionsSpec extends AnyFlatSpec with Matchers with Inside {
 
   "doIfSuccess" should "perform a side effect if the Try is a Success" in {
     val value = 42

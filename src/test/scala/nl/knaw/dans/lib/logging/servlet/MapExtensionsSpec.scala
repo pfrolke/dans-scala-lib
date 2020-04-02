@@ -15,9 +15,10 @@
  */
 package nl.knaw.dans.lib.logging.servlet
 
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class MapExtensionsSpec extends FlatSpec with Matchers {
+class MapExtensionsSpec extends AnyFlatSpec with Matchers {
 
   "makeString" should "format a Map[String, String] properly" in {
     val input = Map(

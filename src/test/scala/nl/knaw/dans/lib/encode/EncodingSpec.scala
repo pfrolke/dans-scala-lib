@@ -17,9 +17,11 @@ package nl.knaw.dans.lib.encode
 
 import java.nio.file.Paths
 
-import org.scalatest.{ FlatSpec, Matchers, OptionValues }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.OptionValues
+import org.scalatest.matchers.should.Matchers
 
-class EncodingSpec extends FlatSpec with Matchers with OptionValues {
+class EncodingSpec extends AnyFlatSpec with Matchers with OptionValues {
 
   "escapePath" should "return a string without any escaped characters when the path segments contain only alphanumeric characters or a '_' character" in {
     val s = "abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/0123456789/_"
