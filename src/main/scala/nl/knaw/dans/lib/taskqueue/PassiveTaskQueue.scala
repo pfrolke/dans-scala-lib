@@ -37,7 +37,7 @@ class PassiveTaskQueue() extends TaskQueue with DebugEnhancedLogging {
   }
 
   /**
-   * Process items on the queue
+   * Processes items on the queue.
    */
   def process(): Unit = {
     trace(())

@@ -22,7 +22,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.concurrent.ExecutionContext
 
 /**
- * TaskQueue that processes its Tasks on a dedicated thread.
+ * TaskQueue that processes its [[Task]]s on a dedicated thread.
  *
  * @param capacity the maximum capacity of the queue
  */
