@@ -24,6 +24,7 @@ repo_url: https://github.com/DANS-KNAW/dans-scala-lib
 
 nav:
   - Manual: index.md
+  - API: api.md
 
 plugins:
   - markdownextradata
