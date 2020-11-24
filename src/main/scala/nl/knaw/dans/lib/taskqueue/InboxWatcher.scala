@@ -15,10 +15,8 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
-import java.util.Comparator
 import java.util.concurrent.Executors
 
-import better.files.File
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.concurrent.ExecutionContext
@@ -28,22 +26,23 @@ import scala.concurrent.ExecutionContext
  * by the inbox. Before receiving new files it will first process the files that were available at startup time.
  *
  * @param inbox the inbox to watch
+ * @tparam T the type of target for the tasks
  */
-class InboxWatcher(inbox: AbstractInbox) extends DebugEnhancedLogging {
+class InboxWatcher[T](inbox: AbstractInbox[T]) extends DebugEnhancedLogging {
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
-  private val tasks: ActiveTaskQueue = new ActiveTaskQueue()
+  private val tasks: ActiveTaskQueue[T] = new ActiveTaskQueue()
   private val monitor = inbox.createFileMonitor(tasks)
 
   /**
    * Enqueues files currently present and the starts watching for new ones. A background thread processes
    * the tasks derived from the enqueued files.
    *
-   * @param comparator optional object determining the order in which to process files present at start-up time.
+   * @param s
    */
-  def start(comparator: Option[Comparator[File]] = None): Unit = {
+  def start(s: Option[TaskSorter[T]] = None): Unit = {
     trace(())
     logger.info("Enqueuing files found in inbox...")
-    inbox.enqueue(tasks, comparator)
+    inbox.enqueue(tasks, s)
     logger.info("Start processing deposits...")
     tasks.start()
     logger.info("Starting inbox monitor...")

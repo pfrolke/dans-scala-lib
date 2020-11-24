@@ -21,16 +21,18 @@ import scala.collection.mutable.ListBuffer
 
 /**
  * A TaskQueue that processes all of its tasks synchronously.
+ *
+ * @tparam T the type of target for the tasks
  */
-class PassiveTaskQueue() extends TaskQueue with DebugEnhancedLogging {
-  private val tasks = new ListBuffer[Task]
+class PassiveTaskQueue[T]() extends TaskQueue[T] with DebugEnhancedLogging {
+  private val tasks = new ListBuffer[Task[T]]
 
   /**
    * Adds a new task to the queue.
    *
    * @param t the task to add
    */
-  def add(t: Task): Unit = {
+  def add(t: Task[T]): Unit = {
     trace(t)
     tasks += t
     debug("Task added to queue")

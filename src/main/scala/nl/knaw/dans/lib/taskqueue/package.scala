@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.lib.taskqueue
+package nl.knaw.dans.lib
 
 /**
- * Interface to add tasks to a queue.
+ * Classes that provide facilities to generate tasks from files in an inbox.
  *
- * @tparam T the type of target for the tasks
+ *
+ *
  */
-trait TaskQueue[T] {
-
-  /**
-   * Adds a Task to the queue.
-   *
-   * @param task the Task to add
-   */
-  def add(task: Task[T])
+package object taskqueue {
 }

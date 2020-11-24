@@ -15,46 +15,44 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
-import java.nio.file.Path
-import java.util.Comparator
-
 import better.files.{ File, FileMonitor }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.JavaConverters._
-
 /**
- * An inbox is a directory that contains files (or directories) that represent tasks. The
+ * An inbox is a directory that contains files (or directories) that generate tasks. The
  * inbox is responsible for converting those files into task objects. The nature of the task
  * is determined by each concrete subclass of `AbstractInbox` by implementing [[AbstractInbox#createTask]].
  *
  * Converting files into tasks can be done synchronously, by calling [[AbstractInbox#enqueue]], or asynchronously
- * by creating a  `FileMonitor` with [[AbstractInbox#createFileMonitor]] and start it in an execution context of
- * choice.
+ * by creating a  `FileMonitor` with [[AbstractInbox#createFileMonitor]] and starting it in an execution context of
+ * choice. A common scenario is that these two are both needed in that order. This scenario is handled by [[InboxWatcher]].
  *
  * @param dir the directory serving as inbox
+ * @tparam T the type of target for the tasks
  */
-abstract class AbstractInbox(dir: File) extends DebugEnhancedLogging {
+abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
   private val files = dir.list(_ => true, maxDepth = 1).toList
 
+  private val identitySorter = new TaskSorter[T] {
+    override def sort(tasks: List[Task[T]]): List[Task[T]] = {
+      tasks
+    }
+  }
+
   /**
-   * Immediately convert the currently available files into tasks and put them on the provided [[TaskQueue]].
-   * The order of enqueueing is determined by the java.util.Comparator, if provided.
+   * Immediately converts the currently available files into tasks and puts them on the provided [[TaskQueue]].
+   * The order of enqueueing is determined by a [[TaskSorter]] implementation, if provided.
    *
    * @param q the TaskQueue to which to add the tasks
-   * @param c the comparator for ordering the available files
+   * @param s a task sorter
    *
    */
-  def enqueue(q: TaskQueue, c: Option[Comparator[File]] = None): Unit = {
-    val sortedFiles = c.map { c =>
-      val mutableFiles = files.asJava
-      mutableFiles.sort(c)
-      mutableFiles.asScala.toList
-    }.getOrElse(files)
-    for (f <- sortedFiles) {
-      debug(s"Adding $f")
-      createTask(f).foreach(q.add)
-    }
+  final def enqueue(q: TaskQueue[T], s: Option[TaskSorter[T]]) {
+    s.getOrElse(identitySorter)
+      .sort(files.map(createTask)
+        .filter(_.isDefined)
+        .map(_.head))
+      .foreach(q.add)
   }
 
   /**
@@ -65,7 +63,7 @@ abstract class AbstractInbox(dir: File) extends DebugEnhancedLogging {
    * @param q the TaskQueue to which to add the tasks
    * @return the FileMonitor
    */
-  def createFileMonitor(q: TaskQueue): FileMonitor = {
+  final def createFileMonitor(q: TaskQueue[T]): FileMonitor = {
     new FileMonitor(dir, maxDepth = 1) {
       override def onCreate(f: File, count: Int): Unit = {
         trace(f, count)
@@ -81,5 +79,5 @@ abstract class AbstractInbox(dir: File) extends DebugEnhancedLogging {
    * @param f the file to convert
    * @return the task
    */
-  protected def createTask(f: File): Option[Task]
+  def createTask(f: File): Option[Task[T]]
 }

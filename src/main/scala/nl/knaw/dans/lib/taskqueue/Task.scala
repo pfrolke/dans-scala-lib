@@ -19,8 +19,10 @@ import scala.util.Try
 
 /**
  * A task that can succeed or fail.
+ *
+ * @tparam T the type of the target of this task
  */
-trait Task {
+trait Task[T] {
 
   /**
    * Runs the task.
@@ -28,4 +30,11 @@ trait Task {
    * @return success or failure
    */
   def run(): Try[Unit]
+
+  /**
+   * Returns the object that is the target of the task
+   *
+   * @return the file
+   */
+  def getTarget: T
 }

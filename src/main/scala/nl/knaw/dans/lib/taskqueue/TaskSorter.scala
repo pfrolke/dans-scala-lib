@@ -16,16 +16,10 @@
 package nl.knaw.dans.lib.taskqueue
 
 /**
- * Interface to add tasks to a queue.
+ * An object that can sort a list of tasks.
  *
  * @tparam T the type of target for the tasks
  */
-trait TaskQueue[T] {
-
-  /**
-   * Adds a Task to the queue.
-   *
-   * @param task the Task to add
-   */
-  def add(task: Task[T])
+trait TaskSorter[T] {
+  def sort(tasks: List[Task[T]]): List[Task[T]]
 }
