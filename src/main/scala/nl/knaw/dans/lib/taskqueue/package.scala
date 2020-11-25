@@ -16,7 +16,7 @@
 package nl.knaw.dans.lib
 
 /**
- * Classes that provide facilities to generate tasks from files in an inbox.
+ * Classes that provide facilities to generate tasks from files in an inbox and execute those tasks.
  *
  *
  *
