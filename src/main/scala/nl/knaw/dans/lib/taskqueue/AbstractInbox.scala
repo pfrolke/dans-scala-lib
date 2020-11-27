@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
+import java.nio.file.Path
+
 import better.files.{ File, FileMonitor }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -31,10 +33,21 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
  * @tparam T the type of target for the tasks
  */
 abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
+  def this(path: Path) = this(File(path))
+
   private val files = dir.list(_ => true, maxDepth = 1).toList
 
   private val identitySorter = new TaskSorter[T] {
     override def sort(tasks: List[Task[T]]): List[Task[T]] = {
+      tasks
+    }
+  }
+
+  private val identitySorterJava = new TaskSorterJava[T] {
+
+    import java.util
+
+    override def sort(tasks: util.List[Task[T]]): util.List[Task[T]] = {
       tasks
     }
   }
@@ -52,6 +65,23 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
       .sort(files.map(createTask)
         .filter(_.isDefined)
         .map(_.head))
+      .foreach(q.add)
+  }
+
+  /**
+   * Immediately converts the currently available files into tasks and puts them on the provided [[TaskQueue]].
+   * The order of enqueueing is determined by a [[TaskSorter]] implementation, if provided.
+   *
+   * @param q the TaskQueue to which to add the tasks
+   * @param s a task sorter
+   *
+   */
+  final def enqueueJava(q: TaskQueue[T], s: Option[TaskSorterJava[T]]) {
+    import scala.collection.JavaConverters._
+    s.getOrElse(identitySorterJava)
+      .sort(files.map(createTask)
+        .filter(_.isDefined)
+        .map(_.head).asJava).asScala
       .foreach(q.add)
   }
 
