@@ -49,6 +49,17 @@ class InboxWatcher[T](inbox: AbstractInbox[T]) extends DebugEnhancedLogging {
     monitor.start()
   }
 
+  def startJava(s: Option[TaskSorterJava[T]] = None): Unit = {
+    trace(())
+    logger.info("Enqueuing files found in inbox...")
+    inbox.enqueueJava(tasks, s)
+    logger.info("Start processing deposits...")
+    tasks.start()
+    logger.info("Starting inbox monitor...")
+    monitor.start()
+  }
+
+
   /**
    * Cancels all tasks except the one currently being executed, then terminates the processing thread.
    */
