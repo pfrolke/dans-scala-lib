@@ -20,6 +20,8 @@ import java.nio.file.Path
 import better.files.{ File, FileMonitor }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * An inbox is a directory that contains files (or directories) that generate tasks. The
  * inbox is responsible for converting those files into task objects. The nature of the task
@@ -78,10 +80,13 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
    */
   final def enqueueJava(q: TaskQueue[T], s: Option[TaskSorterJava[T]]) {
     import scala.collection.JavaConverters._
+    val unorderedTasks = files.map(createTask)
+      .filter(_.isDefined)
+      .map(_.head)
+    val mutableTasks = ListBuffer[Task[T]]()
+    mutableTasks.appendAll(unorderedTasks)
     s.getOrElse(identitySorterJava)
-      .sort(files.map(createTask)
-        .filter(_.isDefined)
-        .map(_.head).asJava).asScala
+      .sort(mutableTasks.asJava).asScala
       .foreach(q.add)
   }
 
