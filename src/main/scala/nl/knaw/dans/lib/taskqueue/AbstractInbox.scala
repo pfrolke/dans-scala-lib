@@ -44,16 +44,6 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
       tasks
     }
   }
-
-  private val identitySorterJava = new TaskSorterJava[T] {
-
-    import java.util
-
-    override def sort(tasks: util.List[Task[T]]): util.List[Task[T]] = {
-      tasks
-    }
-  }
-
   /**
    * Immediately converts the currently available files into tasks and puts them on the provided [[TaskQueue]].
    * The order of enqueueing is determined by a [[TaskSorter]] implementation, if provided.
@@ -67,26 +57,6 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
       .sort(files.map(createTask)
         .filter(_.isDefined)
         .map(_.head))
-      .foreach(q.add)
-  }
-
-  /**
-   * Immediately converts the currently available files into tasks and puts them on the provided [[TaskQueue]].
-   * The order of enqueueing is determined by a [[TaskSorter]] implementation, if provided.
-   *
-   * @param q the TaskQueue to which to add the tasks
-   * @param s a task sorter
-   *
-   */
-  final def enqueueJava(q: TaskQueue[T], s: Option[TaskSorterJava[T]]) {
-    import scala.collection.JavaConverters._
-    val unorderedTasks = files.map(createTask)
-      .filter(_.isDefined)
-      .map(_.head)
-    val mutableTasks = ListBuffer[Task[T]]()
-    mutableTasks.appendAll(unorderedTasks)
-    s.getOrElse(identitySorterJava)
-      .sort(mutableTasks.asJava).asScala
       .foreach(q.add)
   }
 

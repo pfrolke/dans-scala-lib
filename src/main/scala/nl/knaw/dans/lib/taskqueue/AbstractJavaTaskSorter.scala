@@ -15,12 +15,23 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
+import java.util
+
+import scala.collection.mutable.ListBuffer
+
 /**
- * An object that can sort a list of tasks.
+ * A Java-compatible TaskSorter. The sort implementation task a `java.util.List` which, unlike the Scala `List`,
+ * may be modified by the sort algorithm.
  *
  * @tparam T the type of target for the tasks
  */
-trait TaskSorter[T] {
+abstract class AbstractJavaTaskSorter[T] extends TaskSorter[T] {
+  final override def sort(tasks: List[Task[T]]): List[Task[T]] = {
+    import scala.collection.JavaConverters._
+    val mutableTasks = ListBuffer[Task[T]]()
+    mutableTasks.appendAll(tasks)
+    sort(mutableTasks.asJava).asScala.toList
+  }
 
   /**
    * Sorts a list of tasks returning a sorted version of the list.
@@ -28,5 +39,5 @@ trait TaskSorter[T] {
    * @param tasks the tasks to be sorted
    * @return the sorted list
    */
-  def sort(tasks: List[Task[T]]): List[Task[T]]
+  def sort(tasks: util.List[Task[T]]): util.List[Task[T]]
 }

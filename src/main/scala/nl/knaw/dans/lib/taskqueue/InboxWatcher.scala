@@ -37,7 +37,7 @@ class InboxWatcher[T](inbox: AbstractInbox[T]) extends DebugEnhancedLogging {
    * Enqueues files currently present and the starts watching for new ones. A background thread processes
    * the tasks derived from the enqueued files.
    *
-   * @param s
+   * @param s the task sort
    */
   def start(s: Option[TaskSorter[T]] = None): Unit = {
     trace(())
@@ -48,17 +48,6 @@ class InboxWatcher[T](inbox: AbstractInbox[T]) extends DebugEnhancedLogging {
     logger.info("Starting inbox monitor...")
     monitor.start()
   }
-
-  def startJava(s: Option[TaskSorterJava[T]] = None): Unit = {
-    trace(())
-    logger.info("Enqueuing files found in inbox...")
-    inbox.enqueueJava(tasks, s)
-    logger.info("Start processing deposits...")
-    tasks.start()
-    logger.info("Starting inbox monitor...")
-    monitor.start()
-  }
-
 
   /**
    * Cancels all tasks except the one currently being executed, then terminates the processing thread.

@@ -18,7 +18,9 @@ package nl.knaw.dans.lib.taskqueue
 import scala.util.Try
 
 /**
- * A task that can succeed or fail.
+ * A task that can succeed or fail. This must be implemented by the application. The task probably has a type
+ * that represents the unit of work that it works on. For example, if your inbox processes orders, you will probably
+ * encapsulate all data about an order in an `Order` class. The target type of your task would then be `Order`.
  *
  * @tparam T the type of the target of this task
  */

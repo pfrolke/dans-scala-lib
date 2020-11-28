@@ -15,8 +15,21 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
-import java.util
+import scala.util.Try
 
-trait TaskSorterJava[T] {
-  def sort(tasks: util.List[Task[T]]): util.List[Task[T]]
+/**
+ * An alternative for [[Task]] that is easier to implement in Java. Instead of implementing [[Task#run]]
+ * implement [[AbstractJavaTask#runTask]] and throw an exception when the task fails.
+ *
+ * @tparam T the type of the target of this task
+ */
+abstract class AbstractJavaTask[T] extends Task[T] {
+  final override def run(): Try[Unit] = Try {
+    runTask()
+  }
+
+  /**
+   * Runs the tasks and throws an exception to signal that the task failed.
+   */
+  def runTask(): Unit
 }
