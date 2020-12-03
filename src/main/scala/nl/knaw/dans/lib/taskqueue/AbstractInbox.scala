@@ -37,7 +37,7 @@ import scala.collection.mutable.ListBuffer
 abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
   def this(path: Path) = this(File(path))
 
-  private val files = dir.list(_ => true, maxDepth = 1).toList
+  private val files = dir.list(f => f != dir, maxDepth = 1).toList
 
   private val identitySorter = new TaskSorter[T] {
     override def sort(tasks: List[Task[T]]): List[Task[T]] = {
