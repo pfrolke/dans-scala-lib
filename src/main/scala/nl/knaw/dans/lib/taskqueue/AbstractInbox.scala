@@ -20,7 +20,7 @@ import java.nio.file.Path
 import better.files.{ File, FileMonitor }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 /**
  * An inbox is a directory that contains files (or directories) that generate tasks. The
@@ -44,6 +44,7 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
       tasks
     }
   }
+
   /**
    * Immediately converts the currently available files into tasks and puts them on the provided [[TaskQueue]].
    * The order of enqueueing is determined by a [[TaskSorter]] implementation, if provided.
@@ -52,7 +53,7 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
    * @param s a task sorter
    *
    */
-  final def enqueue(q: TaskQueue[T], s: Option[TaskSorter[T]]) {
+  final def enqueue(q: TaskQueue[T], s: Option[TaskSorter[T]]): Try[Unit] = Try {
     s.getOrElse(identitySorter)
       .sort(files.map(createTask)
         .filter(_.isDefined)
