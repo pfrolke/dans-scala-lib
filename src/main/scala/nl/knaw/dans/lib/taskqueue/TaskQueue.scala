@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
+import scala.util.Try
+
 /**
  * Interface to add tasks to a queue.
  *
@@ -27,5 +29,5 @@ trait TaskQueue[T] {
    *
    * @param task the Task to add
    */
-  def add(task: Task[T])
+  def add(task: Task[T]): Try[Unit]
 }

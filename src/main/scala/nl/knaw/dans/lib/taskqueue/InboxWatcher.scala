@@ -20,6 +20,7 @@ import java.util.concurrent.Executors
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
  * Active object that, after it is started, watches an inbox for new files appearing, using the FileMonitor provided
@@ -39,20 +40,22 @@ class InboxWatcher[T](inbox: AbstractInbox[T]) extends DebugEnhancedLogging {
    *
    * @param s the task sort
    */
-  def start(s: Option[TaskSorter[T]] = None): Unit = {
+  def start(s: Option[TaskSorter[T]] = None): Try[Unit] = {
     trace(())
     logger.info("Enqueuing files found in inbox...")
-    inbox.enqueue(tasks, s)
-    logger.info("Start processing deposits...")
-    tasks.start()
-    logger.info("Starting inbox monitor...")
-    monitor.start()
+    for {
+      _ <- inbox.enqueue(tasks, s)
+      _ = logger.info("Start processing deposits...")
+      _ = tasks.start()
+      _ = logger.info("Starting inbox monitor...")
+      _ = monitor.start()
+    } yield ()
   }
 
   /**
    * Cancels all tasks except the one currently being executed, then terminates the processing thread.
    */
-  def stop(): Unit = {
+  def stop(): Try[Unit] = Try {
     trace(())
     logger.info("Sending stop item to queue...")
     tasks.stop()

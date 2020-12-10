@@ -21,6 +21,7 @@ import better.files.{ File, FileMonitor }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
  * An inbox is a directory that contains files (or directories) that generate tasks. The
@@ -73,7 +74,11 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
     new FileMonitor(dir, maxDepth = 1) {
       override def onCreate(f: File, count: Int): Unit = {
         trace(f, count)
-        createTask(f).foreach(q.add)
+        try {
+          createTask(f).foreach(q.add)
+        } catch {
+          case NonFatal(e) => logger.error("createTask threw an uncaught exception.", e)
+        }
       }
     }
   }
@@ -81,6 +86,8 @@ abstract class AbstractInbox[T](dir: File) extends DebugEnhancedLogging {
   /**
    * Converts a file (or directory) into a task or returns `None`, if the file is
    * not actionable, in which case it will simply be ignored.
+   *
+   * The implementation of `createTask` should deal with all non-fatal exceptions that are raised.
    *
    * @param f the file to convert
    * @return the task

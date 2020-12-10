@@ -18,6 +18,7 @@ package nl.knaw.dans.lib.taskqueue
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 /**
  * A TaskQueue that processes all of its tasks synchronously.
@@ -32,7 +33,7 @@ class PassiveTaskQueue[T]() extends TaskQueue[T] with DebugEnhancedLogging {
    *
    * @param t the task to add
    */
-  def add(t: Task[T]): Unit = {
+  def add(t: Task[T]): Try[Unit] = Try {
     trace(t)
     tasks += t
     debug("Task added to queue")
@@ -41,7 +42,7 @@ class PassiveTaskQueue[T]() extends TaskQueue[T] with DebugEnhancedLogging {
   /**
    * Processes items on the queue.
    */
-  def process(): Unit = {
+  def process(): Try[Unit] = Try {
     trace(())
     tasks.map {
       t =>

@@ -20,6 +20,7 @@ import java.util.concurrent.{ Executors, LinkedBlockingDeque }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
  * TaskQueue that processes its [[Task]]s on a dedicated thread.
@@ -35,7 +36,7 @@ class ActiveTaskQueue[T](capacity: Int = 100000) extends TaskQueue[T] with Debug
    *
    * @param t the task to add
    */
-  def add(t: Task[T]): Unit = {
+  def add(t: Task[T]): Try [Unit]  = Try {
     trace(t)
     tasks.put(Some(t))
     debug("Task added to queue")
@@ -44,7 +45,7 @@ class ActiveTaskQueue[T](capacity: Int = 100000) extends TaskQueue[T] with Debug
   /**
    * Starts the queue's processing thread.
    */
-  def start(): Unit = {
+  def start(): Try[Unit] = Try {
     executionContext.execute(runnable = () => {
       logger.info("Processing thread ready for running tasks")
       while (runTask(tasks.take())) {}
@@ -62,7 +63,7 @@ class ActiveTaskQueue[T](capacity: Int = 100000) extends TaskQueue[T] with Debug
    * Cancels pending tasks and lets the currently running task finish. Then lets the
    * processing thread terminate.
    */
-  def stop(): Unit = {
+  def stop(): Try[Unit] = Try {
     tasks.clear()
     tasks.put(Option.empty[Task[T]])
   }
