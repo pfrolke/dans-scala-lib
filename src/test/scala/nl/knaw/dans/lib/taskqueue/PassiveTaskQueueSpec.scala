@@ -50,4 +50,9 @@ class PassiveTaskQueueSpec extends AnyFlatSpec with Matchers {
     tasks(0).triggered shouldBe true
     tasks(2).triggered shouldBe true
   }
+
+  it should "not fail on an empty task queue" in {
+    val taskQueue = new PassiveTaskQueue[Any]()
+    taskQueue.process()
+  }
 }

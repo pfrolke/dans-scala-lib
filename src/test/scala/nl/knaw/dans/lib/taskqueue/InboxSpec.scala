@@ -58,6 +58,13 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     }
   }
 
+  // Test task sorter that sorts the tasks on target file name alphabetically
+  val testTaskSorter = new TaskSorter[File] {
+    override def sort(tasks: List[Task[File]]): List[Task[File]] = {
+      tasks.sortBy(_.getTarget.name)
+    }
+  }
+
   override def beforeEach(): Unit = {
     inboxDir.createDirectories()
     inboxDir.clear()
@@ -139,7 +146,7 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     inboxWatcher.stop()
   }
 
-  it should "use the TaskSorter to process tasks in the correct order" in {
+  it should "use a defined TaskSorter to process tasks in the correct order" in {
     val file1: File = (inboxDir / "d-file1.txt").createFile()
     val file2: File = (inboxDir / "c-file2.txt").createFile()
     val file3: File = (inboxDir / "b-file3.txt").createFile()
@@ -147,13 +154,6 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
 
     val testInbox = TestInbox()
     val inboxWatcher = new InboxWatcher[File](testInbox)
-
-    // this test task sorter alphabetically sorts the tasks on file name
-    val testTaskSorter = new TaskSorter[File] {
-      override def sort(tasks: List[Task[File]]): List[Task[File]] = {
-        tasks.sortBy(_.getTarget.name)
-      }
-    }
 
     inboxWatcher.start(Some(testTaskSorter))
 
@@ -177,7 +177,27 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     inboxWatcher.stop()
   }
 
+  it should "use a defined TaskSorter to process a single task" in {
+    val file1: File = (inboxDir / "file1.txt").createFile()
+
+    val testInbox = TestInbox()
+    val inboxWatcher = new InboxWatcher[File](testInbox)
+
+    inboxWatcher.start(Some(testTaskSorter))
+
+    eventually {
+      testInbox.createdTasks.size shouldBe 1
+
+      val task = testInbox.createdTasks.head
+
+      (task.run _).verify()
+    }
+
+    inboxWatcher.stop()
+  }
+
   it should "process other tasks if a task fails" in {
+    // the TestInbox defined above creates a failing task for .jpg extensions
     val file1: File = (inboxDir / "file1.txt").createFile()
     val file2: File = (inboxDir / "file2.jpg").createFile()
     val file3: File = (inboxDir / "file3.txt").createFile()
