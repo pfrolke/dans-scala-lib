@@ -15,17 +15,18 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
+import better.files.File
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class PassiveTaskQueueSpec extends AnyFlatSpec with Matchers {
 
   "process" should "cause previously queued tasks to be processed" in {
-    val taskQueue = new PassiveTaskQueue[Any]()
+    val taskQueue = new PassiveTaskQueue[File]()
     val tasks = List(
-      TriggerTask(),
-      TriggerTask(),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
     )
 
     tasks.foreach(taskQueue.add)
@@ -37,22 +38,23 @@ class PassiveTaskQueueSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "cause all other tasks to be processed if one task fails" in {
-    val taskQueue = new PassiveTaskQueue[Any]()
+    val taskQueue = new PassiveTaskQueue[File]()
     val tasks = List(
-      TriggerTask(),
-      TriggerTask(shouldFail = true),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(shouldFail = true),
+      FileTriggerTask(),
     )
 
     tasks.foreach(taskQueue.add)
     taskQueue.process()
 
     tasks(0).triggered shouldBe true
+    tasks(1).triggered shouldBe true
     tasks(2).triggered shouldBe true
   }
 
   it should "not fail on an empty task queue" in {
-    val taskQueue = new PassiveTaskQueue[Any]()
+    val taskQueue = new PassiveTaskQueue[File]()
     taskQueue.process()
   }
 }

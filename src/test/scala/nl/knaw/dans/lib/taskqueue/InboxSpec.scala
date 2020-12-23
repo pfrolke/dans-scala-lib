@@ -30,39 +30,23 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
   val testDir: File = File.currentWorkingDirectory / "target" / "test" / getClass.getSimpleName
   val inboxDir: File = testDir / "inbox"
 
-  // Inbox implementation for testing purposes which creates tasks for .txt files and failing tasks for .jpg files
+  // Inbox implementation for testing purposes which creates tasks for files with extension ".succeed" and failing tasks for files with extension ".fail"
   case class TestInbox() extends AbstractInbox[File](inboxDir) {
-    val createdTasks: ListBuffer[Task[File]] = ListBuffer[Task[File]]() // keep track of tasks created
+    val createdTasks: ListBuffer[FileTriggerTask] = ListBuffer[FileTriggerTask]()
 
     override def createTask(f: File): Option[Task[File]] = f.extension match {
-      case Some(".txt") => {
-        // mocking a Task instance to test sorting tasks more easily
-        val fileTask = stub[Task[File]]
-        (fileTask.getTarget _).when().returns(f)
-        (fileTask.run _).when().returns(Success(()))
-
-        createdTasks += fileTask
-        Some(fileTask)
-      }
-
-      case Some(".jpg") => {
-        val fileTask = stub[Task[File]]
-        (fileTask.getTarget _).when().returns(f)
-        (fileTask.run _).when().throws(new Exception("Task failed"))
-
-        createdTasks += fileTask
-        Some(fileTask)
+      case Some(".succeed") | Some(".fail") => {
+        val task = FileTriggerTask(target = f, shouldFail = f.extension.contains(".fail"))
+        createdTasks += task
+        Some(task)
       }
 
       case _ => None
     }
   }
 
-  // Test task sorter that sorts the tasks on target file name alphabetically
-  val testTaskSorter = new TaskSorter[File] {
-    override def sort(tasks: List[Task[File]]): List[Task[File]] = {
-      tasks.sortBy(_.getTarget.name)
-    }
+  val fileNameAlphabeticalTaskSorter: TaskSorter[File] = (tasks: List[Task[File]]) => {
+    tasks.sortBy(_.getTarget.name)
   }
 
   override def beforeEach(): Unit = {
@@ -71,8 +55,8 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
   }
 
   "start" should "process files already in inbox" in {
-    val file1: File = (inboxDir / "file1.txt").createFile()
-    val file2: File = (inboxDir / "file2.txt").createFile()
+    val file1: File = (inboxDir / "file1.succeed").createFile()
+    val file2: File = (inboxDir / "file2.succeed").createFile()
 
     val testInbox = TestInbox()
     val inboxWatcher = new InboxWatcher[File](testInbox)
@@ -82,13 +66,10 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     eventually {
       testInbox.createdTasks.size shouldBe 2
 
-      // verify the tasks target the correct files
-      testInbox.createdTasks.exists(_.getTarget == file1) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file2) shouldBe true
+      testInbox.createdTasks.map(_.getTarget) should contain allOf(file1, file2)
 
-      // verify all tasks' run method has been called
-      (testInbox.createdTasks(0).run _).verify()
-      (testInbox.createdTasks(1).run _).verify()
+      testInbox.createdTasks(0).triggered shouldBe true
+      testInbox.createdTasks(1).triggered shouldBe true
     }
 
     inboxWatcher.stop()
@@ -101,29 +82,25 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     inboxWatcher.start()
 
     // create files after starting watcher
-    val file1: File = (inboxDir / "file1.txt").createFile()
-    val file2: File = (inboxDir / "file2.txt").createFile()
+    val file1: File = (inboxDir / "file1.succeed").createFile()
+    val file2: File = (inboxDir / "file2.succeed").createFile()
 
     eventually {
       testInbox.createdTasks.size shouldBe 2
 
-      // verify the tasks target the correct files
-      testInbox.createdTasks.exists(_.getTarget == file1) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file2) shouldBe true
+      testInbox.createdTasks.map(_.getTarget) should contain allOf(file1, file2)
 
-      // verify all tasks' run method has been called
-      (testInbox.createdTasks(0).run _).verify()
-      (testInbox.createdTasks(1).run _).verify()
+      testInbox.createdTasks(0).triggered shouldBe true
+      testInbox.createdTasks(1).triggered shouldBe true
     }
 
     inboxWatcher.stop()
   }
 
   it should "process only the actionable files" in {
-    // TestInbox only creates tasks for .txt files
-    val file1: File = (inboxDir / "file1.txt").createFile()
-    val file2: File = (inboxDir / "file2.png").createFile()
-    val file3: File = (inboxDir / "file3.txt").createFile()
+    val file1: File = (inboxDir / "file1.succeed").createFile()
+    val file2: File = (inboxDir / "file2.noaction").createFile()
+    val file3: File = (inboxDir / "file3.succeed").createFile()
 
     val testInbox = TestInbox()
     val inboxWatcher = new InboxWatcher[File](testInbox)
@@ -133,38 +110,64 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     eventually {
       testInbox.createdTasks.size shouldBe 2
 
-      // verify the tasks target the correct files
-      testInbox.createdTasks.exists(_.getTarget == file1) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file3) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file2) shouldBe false
+      testInbox.createdTasks.map(_.getTarget) should contain allOf(file1, file3)
 
-      // verify all tasks' run method has been called
-      (testInbox.createdTasks(0).run _).verify()
-      (testInbox.createdTasks(1).run _).verify()
+      testInbox.createdTasks(0).triggered shouldBe true
+      testInbox.createdTasks(1).triggered shouldBe true
+    }
+
+    inboxWatcher.stop()
+  }
+
+  it should "use a defined TaskSorter to process a single task" in {
+    val file1: File = (inboxDir / "file1.succeed").createFile()
+
+    val testInbox = TestInbox()
+    val inboxWatcher = new InboxWatcher[File](testInbox)
+
+    inboxWatcher.start(Some(fileNameAlphabeticalTaskSorter))
+
+    eventually {
+      testInbox.createdTasks.size shouldBe 1
+
+      val task = testInbox.createdTasks.head
+
+      task.getTarget shouldBe file1
+
+      task.triggered shouldBe true
     }
 
     inboxWatcher.stop()
   }
 
   it should "use a defined TaskSorter to process tasks in the correct order" in {
-    val file1: File = (inboxDir / "d-file1.txt").createFile()
-    val file2: File = (inboxDir / "c-file2.txt").createFile()
-    val file3: File = (inboxDir / "b-file3.txt").createFile()
-    val file4: File = (inboxDir / "a-file4.txt").createFile()
+    case class SortingTestInbox() extends AbstractInbox[File](inboxDir) {
+      val createdTasks: ListBuffer[FileTriggerTask] = ListBuffer[FileTriggerTask]()
 
-    val testInbox = TestInbox()
-    val inboxWatcher = new InboxWatcher[File](testInbox)
+      override def createTask(f: File): Option[Task[File]] = {
+        val task = stub[FileTriggerTask]
+        task.run _ when () returns Success(())
+        task.getTarget _ when () returns f
 
-    inboxWatcher.start(Some(testTaskSorter))
+        createdTasks += task
+        Some(task)
+      }
+    }
+
+    val file1: File = (inboxDir / "d-file1.succeed").createFile()
+    val file2: File = (inboxDir / "c-file2.succeed").createFile()
+    val file3: File = (inboxDir / "b-file3.succeed").createFile()
+    val file4: File = (inboxDir / "a-file4.succeed").createFile()
+
+    val sortingTestInbox = SortingTestInbox()
+    val inboxWatcher = new InboxWatcher[File](sortingTestInbox)
+
+    inboxWatcher.start(Some(fileNameAlphabeticalTaskSorter))
 
     eventually {
-      testInbox.createdTasks.size shouldBe 4
+      sortingTestInbox.createdTasks.size shouldBe 4
 
-      // verify the tasks have been ran in the correct order
-      val task1 = testInbox.createdTasks.find(_.getTarget == file4).get
-      val task2 = testInbox.createdTasks.find(_.getTarget == file3).get
-      val task3 = testInbox.createdTasks.find(_.getTarget == file2).get
-      val task4 = testInbox.createdTasks.find(_.getTarget == file1).get
+      val List(task1, task2, task3, task4): List[Task[File]] = fileNameAlphabeticalTaskSorter.sort(sortingTestInbox.createdTasks.toList)
 
       inSequence {
         (task1.run _).verify()
@@ -177,30 +180,11 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     inboxWatcher.stop()
   }
 
-  it should "use a defined TaskSorter to process a single task" in {
-    val file1: File = (inboxDir / "file1.txt").createFile()
-
-    val testInbox = TestInbox()
-    val inboxWatcher = new InboxWatcher[File](testInbox)
-
-    inboxWatcher.start(Some(testTaskSorter))
-
-    eventually {
-      testInbox.createdTasks.size shouldBe 1
-
-      val task = testInbox.createdTasks.head
-
-      (task.run _).verify()
-    }
-
-    inboxWatcher.stop()
-  }
-
   it should "process other tasks if a task fails" in {
     // the TestInbox defined above creates a failing task for .jpg extensions
-    val file1: File = (inboxDir / "file1.txt").createFile()
-    val file2: File = (inboxDir / "file2.jpg").createFile()
-    val file3: File = (inboxDir / "file3.txt").createFile()
+    val file1: File = (inboxDir / "file1.succeed").createFile()
+    val file2: File = (inboxDir / "file2.fail").createFile()
+    val file3: File = (inboxDir / "file3.succeed").createFile()
 
     val testInbox = TestInbox()
     val inboxWatcher = new InboxWatcher[File](testInbox)
@@ -210,15 +194,11 @@ class InboxSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with E
     eventually {
       testInbox.createdTasks.size shouldBe 3
 
-      // verify the tasks target the correct files
-      testInbox.createdTasks.exists(_.getTarget == file1) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file2) shouldBe true
-      testInbox.createdTasks.exists(_.getTarget == file3) shouldBe true
+      testInbox.createdTasks.map(_.getTarget) should contain allOf(file1, file2, file3)
 
-      // verify all tasks' run method has been called
-      (testInbox.createdTasks(0).run _).verify()
-      (testInbox.createdTasks(1).run _).verify()
-      (testInbox.createdTasks(2).run _).verify()
+      testInbox.createdTasks(0).triggered shouldBe true
+      testInbox.createdTasks(1).triggered shouldBe true
+      testInbox.createdTasks(2).triggered shouldBe true
     }
 
     inboxWatcher.stop()

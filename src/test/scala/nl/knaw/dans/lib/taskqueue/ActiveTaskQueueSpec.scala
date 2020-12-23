@@ -15,22 +15,23 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.OneInstancePerTest
+import better.files.File
+import org.scalatest.{ OneInstancePerTest, time }
 import org.scalatest.concurrent.{ Eventually, IntegrationPatience }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{ Seconds, Span }
 
-import scala.util.Success
+import scala.util.Try
 
-class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerTest with Eventually with IntegrationPatience with MockFactory {
+class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerTest with Eventually with IntegrationPatience {
 
   "start" should "process previously queued tasks" in {
-    val taskQueue = new ActiveTaskQueue[Any]()
+    val taskQueue = new ActiveTaskQueue[File]()
     val triggeredTasks = List(
-      TriggerTask(),
-      TriggerTask(),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
     )
 
     triggeredTasks.foreach(taskQueue.add)
@@ -46,11 +47,11 @@ class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerT
   }
 
   it should "process other tasks if one task fails" in {
-    val taskQueue = new ActiveTaskQueue[Any]()
+    val taskQueue = new ActiveTaskQueue[File]()
     val triggeredTasks = List(
-      TriggerTask(),
-      TriggerTask(shouldFail = true),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(shouldFail = true),
+      FileTriggerTask(),
     )
 
     triggeredTasks.foreach(taskQueue.add)
@@ -58,6 +59,7 @@ class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerT
 
     eventually {
       triggeredTasks(0).triggered shouldBe true
+      triggeredTasks(1).triggered shouldBe true
       triggeredTasks(2).triggered shouldBe true
     }
 
@@ -65,11 +67,11 @@ class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerT
   }
 
   it should "process incoming tasks" in {
-    val taskQueue = new ActiveTaskQueue[Any]()
+    val taskQueue = new ActiveTaskQueue[File]()
     val triggeredTasks = List(
-      TriggerTask(),
-      TriggerTask(),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
     )
 
     // starting the taskQueue before adding tasks
@@ -87,40 +89,41 @@ class ActiveTaskQueueSpec extends AnyFlatSpec with Matchers with OneInstancePerT
   }
 
   it should "not fail on an empty task queue" in {
-    val taskQueue = new ActiveTaskQueue[Any]()
+    val taskQueue = new ActiveTaskQueue[File]()
     taskQueue.start()
     taskQueue.stop()
   }
 
   "stop" should "cancel all pending tasks" in {
-    val taskQueue = new ActiveTaskQueue[Any]()
+    val taskQueue = new ActiveTaskQueue[File]()
 
-    // this mocked task will stop the ActiveTaskQueue when it gets processed
-    // therefore all tasks following it will get skipped
-    val stopTask = mock[Task[Any]]
-    (stopTask.run _)
-      .expects()
-      .onCall(() => {
+    // this task will stop the ActiveTaskQueue when it gets processed
+    // therefore all tasks following it should not be triggered
+    val stopTask = new FileTriggerTask {
+      override def run(): Try[Unit] = {
         taskQueue.stop()
-        Success(())
-      })
+        super.run()
+      }
+    }
 
     val triggeredTasks = List(
-      TriggerTask(),
+      FileTriggerTask(),
       stopTask,
-      TriggerTask(),
-      TriggerTask(),
+      FileTriggerTask(),
+      FileTriggerTask(),
     )
 
     triggeredTasks.foreach(taskQueue.add)
     taskQueue.start()
 
     eventually {
-      triggeredTasks(0).asInstanceOf[TriggerTask].triggered shouldBe true
-
-      // these tasks came after the stopTask and should be skipped
-      triggeredTasks(2).asInstanceOf[TriggerTask].triggered shouldBe false
-      triggeredTasks(3).asInstanceOf[TriggerTask].triggered shouldBe false
+      triggeredTasks(0).triggered shouldBe true
+      triggeredTasks(1).triggered shouldBe true
     }
+
+    Thread.sleep(1000)
+
+    triggeredTasks(2).triggered shouldBe false
+    triggeredTasks(3).triggered shouldBe false
   }
 }

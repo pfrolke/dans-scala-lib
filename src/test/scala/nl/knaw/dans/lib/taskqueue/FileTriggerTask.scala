@@ -15,22 +15,18 @@
  */
 package nl.knaw.dans.lib.taskqueue
 
+import better.files.File
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.Try
 
-/**
- *
- * @param shouldFail if this is set to true the task will throw an exception in the run method
- */
-case class TriggerTask(shouldFail: Boolean = false) extends Task[Any] with DebugEnhancedLogging {
+case class FileTriggerTask(target: File = null, shouldFail: Boolean = false) extends Task[File] with DebugEnhancedLogging {
   var triggered = false
 
   override def run(): Try[Unit] = Try {
-    trace(())
-    if (shouldFail) throw new Exception("Task failed")
     triggered = true
+    if (shouldFail) throw new Exception("Task failed")
   }
 
-  override def getTarget: Any = {}
+  override def getTarget: File = target
 }
