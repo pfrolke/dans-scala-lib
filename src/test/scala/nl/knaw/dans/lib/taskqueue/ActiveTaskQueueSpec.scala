@@ -16,11 +16,10 @@
 package nl.knaw.dans.lib.taskqueue
 
 import better.files.File
-import org.scalatest.{ OneInstancePerTest, time }
+import org.scalatest.OneInstancePerTest
 import org.scalatest.concurrent.{ Eventually, IntegrationPatience }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{ Seconds, Span }
 
 import scala.util.Try
 
